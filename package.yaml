@@ -19,6 +19,8 @@ dependencies:
 - lens
 - split
 - containers
+- sort
+- mtl
 name: aoc2018
 version: 0.1.0.0
 extra-source-files:
