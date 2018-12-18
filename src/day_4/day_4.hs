@@ -107,9 +107,11 @@ getSleepyGuard = state $ \t@(_, m) ->
 
 getSleepyMinute :: GId -> State TimeAsleep Minute
 getSleepyMinute id = state $ \t@(_, m) -> case M.lookup id m of
-  Nothing -> (-1, t)
-  Just (_, _, counter) ->
-      (fst $ maximumBy (\(_, a) (_, b) -> a `compare` b) $ M.assocs counter, t)
+    Nothing -> (-1, t)
+    Just (_, _, counter) ->
+        ( fst $ maximumBy (\(_, a) (_, b) -> a `compare` b) $ M.assocs counter
+        , t
+        )
 
 handleInstruction :: TimeStamp -> State TimeAsleep ()
 handleInstruction (TimeStamp t e) = case e of
@@ -118,10 +120,10 @@ handleInstruction (TimeStamp t e) = case e of
     (Start id) -> handleStart id
 
 getSpleeyGuardAndMinute :: State TimeAsleep (GId, Minute)
-getSpleeyGuardAndMinute = state (\t@(_, m) ->
-    let id = evalState getSleepyGuard t
-        min = evalState (getSleepyMinute id) t
-    in ((id, min), t))
+getSpleeyGuardAndMinute = do
+    id  <- getSleepyGuard
+    min <- getSleepyMinute id
+    return (id, min)
 
 
 part1 :: IO ()
