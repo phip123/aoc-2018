@@ -119,11 +119,26 @@ handleInstruction (TimeStamp t e) = case e of
     Awake      -> handleAwake t
     (Start id) -> handleStart id
 
-getSpleeyGuardAndMinute :: State TimeAsleep (GId, Minute)
+getSpleeyGuardAndMinute :: State TimeAsleep ((GId, Minute), (GId, Minute))
 getSpleeyGuardAndMinute = do
-    id  <- getSleepyGuard
-    min <- getSleepyMinute id
-    return (id, min)
+    id   <- getSleepyGuard
+    min  <- getSleepyMinute id
+    pair <- getMostSleepyMinute
+    return ((id, min), pair)
+
+getMaxMinute :: MinuteCounter -> (Minute, Count)
+getMaxMinute m = maximumBy (\(_,c1) (_, c2) -> c1 `compare` c2) $ M.assocs m
+
+getMostSleepyMinute :: State TimeAsleep (GId, Minute)
+getMostSleepyMinute = state $ \t@(_, m) ->
+    let (id, (_, _, counter)) =
+            maximumBy
+                    (\(_, (_, _, m1)) (_, (_, _, m2)) ->
+                        snd (getMaxMinute m1) `compare`  snd (getMaxMinute m2)
+                    )
+                $ M.assocs m
+    in  ((id, fst $ getMaxMinute counter), t)
+
 
 
 part1 :: IO ()
@@ -132,6 +147,3 @@ part1 = do
     print $ evalState getSpleeyGuardAndMinute $ execState
         (mapM handleInstruction $ (sort . map readTimeStamp) (lines content))
         emptyTimeAsleep
-
-
-
